@@ -91,19 +91,45 @@ st.caption(
 
 
 # --------------------------------------------------------------------------
-# Step 1 — upload
+# Step 1 — add documents (upload OR paste)
 # --------------------------------------------------------------------------
-st.subheader("1 · Upload documents")
-files = st.file_uploader(
-    "PDF, image (JPG/PNG), Word or TXT — one or many",
-    type=documents.SUPPORTED_TYPES,
-    accept_multiple_files=True,
-)
+st.subheader("1 · Add documents")
 
-if files:
-    with st.expander("Preview the first file"):
+tab_upload, tab_paste = st.tabs(["📁 Upload files", "⌨️ Paste text"])
+
+with tab_upload:
+    files = st.file_uploader(
+        "PDF, image (JPG/PNG), Word or TXT — one or many",
+        type=documents.SUPPORTED_TYPES,
+        accept_multiple_files=True,
+    )
+
+with tab_paste:
+    pasted = st.text_area(
+        "Paste the document text",
+        height=220,
+        placeholder="Copy the text from an email, portal or PDF and paste it here…",
+    )
+    pasted_name = st.text_input("Name for this row", value="pasted-text")
+
+# Both input methods feed one list.
+sources: list[dict] = []
+for file in files or []:
+    sources.append({"name": file.name, "data": file.getvalue()})
+if pasted and pasted.strip():
+    sources.append({"name": pasted_name.strip() or "pasted-text", "text": pasted})
+
+
+def load_source(source: dict) -> documents.Document:
+    if "text" in source:
+        return documents.Document(kind="pasted", text=source["text"])
+    return documents.read_document(source["data"], source["name"])
+
+
+if sources:
+    with st.expander("Preview the first document"):
         try:
-            preview = documents.read_document(files[0].getvalue(), files[0].name)
+            preview = load_source(sources[0])
             if preview.has_images:
                 st.caption(
                     f"{preview.kind} · read as image(s) — the AI will look at "
@@ -115,11 +141,11 @@ if files:
                 st.caption(f"{preview.kind} · read as text")
                 st.text(preview.text[:2000] + ("…" if len(preview.text) > 2000 else ""))
             else:
-                st.warning("This file appears to be empty.")
+                st.warning("This document appears to be empty.")
             if preview.note:
                 st.info(preview.note)
         except Exception as exc:  # noqa: BLE001
-            st.error(f"Could not read the file: {exc}")
+            st.error(f"Could not read the document: {exc}")
 
 
 # --------------------------------------------------------------------------
@@ -143,23 +169,24 @@ chosen_fields = [(k, label) for k, label in schema if label in chosen_labels]
 # --------------------------------------------------------------------------
 st.subheader("3 · Extract and review")
 
-if st.button("Extract fields", type="primary", disabled=not (files and chosen_fields)):
+if st.button("Extract fields", type="primary", disabled=not (sources and chosen_fields)):
     if not extractor.has_api_key():
         st.error("Add your AI key to `.env` first.")
     else:
         rows, low = [], []
         bar = st.progress(0.0, text="Starting…")
 
-        for i, file in enumerate(files):
-            bar.progress(i / len(files), text=f"Reading {file.name}…")
+        for i, source in enumerate(sources):
+            name = source["name"]
+            bar.progress(i / len(sources), text=f"Reading {name}…")
             try:
-                doc = documents.read_document(file.getvalue(), file.name)
+                doc = load_source(source)
             except Exception as exc:  # noqa: BLE001
-                st.error(f"{file.name}: could not read file — {exc}")
+                st.error(f"{name}: could not read — {exc}")
                 continue
 
             if doc.is_empty:
-                st.warning(f"{file.name}: no readable content, skipped.")
+                st.warning(f"{name}: no readable content, skipped.")
                 continue
 
             try:
@@ -167,18 +194,18 @@ if st.button("Extract fields", type="primary", disabled=not (files and chosen_fi
                     doc.text, doc_type, chosen_fields, images=doc.images
                 )
             except Exception as exc:  # noqa: BLE001
-                st.error(f"{file.name}: extraction failed — {exc}")
+                st.error(f"{name}: extraction failed — {exc}")
                 continue
 
             row = dict(values)
-            row["source_file"] = file.name
+            row["source_file"] = name
             row["extracted_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
             rows.append(row)
 
             labels = dict(chosen_fields)
             for key, level in confidence.items():
                 if level != "high":
-                    low.append(f"{file.name} → {labels.get(key, key)} ({level})")
+                    low.append(f"{name} → {labels.get(key, key)} ({level})")
 
         bar.empty()
         st.session_state["rows"] = rows

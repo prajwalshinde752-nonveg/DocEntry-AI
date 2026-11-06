@@ -2,10 +2,10 @@
 
 Turn import/export trade documents into clean Excel register rows.
 
-**Accepted files:** PDF (digital *or* scanned), JPG/PNG/WEBP/BMP/TIFF photos,
-Word `.docx`, and `.txt`.
+**Accepted input:** upload a PDF (digital *or* scanned), a JPG/PNG/WEBP/BMP/TIFF
+photo, a Word `.docx` or `.txt` — or just paste the text straight into the app.
 
-**Flow:** Upload → choose columns → AI extracts the fields → you review and
+**Flow:** Add a document (upload or paste) → choose columns → AI extracts the fields → you review and
 edit → download Excel (fresh, or appended to your existing master register).
 
 ## Setup (once)
