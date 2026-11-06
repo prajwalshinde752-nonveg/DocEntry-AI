@@ -1,8 +1,11 @@
 # DocEntry-AI
 
-Turn import/export trade documents (PDF) into clean Excel register rows.
+Turn import/export trade documents into clean Excel register rows.
 
-**Flow:** Upload PDF → choose columns → AI extracts the fields → you review and
+**Accepted files:** PDF (digital *or* scanned), JPG/PNG/WEBP/BMP/TIFF photos,
+Word `.docx`, and `.txt`.
+
+**Flow:** Upload → choose columns → AI extracts the fields → you review and
 edit → download Excel (fresh, or appended to your existing master register).
 
 ## Setup (once)
@@ -53,7 +56,8 @@ A browser tab opens at http://localhost:8501
 | File | What it does |
 |---|---|
 | `app.py` | The screens, and the order they appear in |
-| `extractor.py` | PDF → text, then text → fields using the AI |
+| `documents.py` | Turns any supported file into text or images |
+| `extractor.py` | Sends the text/images to the AI, parses the fields |
 | `schemas.py` | The fields we extract for each document type |
 | `excel_writer.py` | Builds / appends the Excel register |
 | `samples/` | Test documents |
@@ -65,8 +69,9 @@ It appears in the app immediately — no other code changes.
 
 ## Current limits
 
-- Digital (text-based) PDFs only. Scanned images are detected and skipped.
 - One item per document. Multi-item invoices only capture the first item.
+- Scanned PDFs: only the first 5 pages are read.
+- Photos are downscaled to 1600 px wide before sending.
 - No storage — data lives in the browser session until you download it.
 
 These are deliberate, so the first version stays finishable.

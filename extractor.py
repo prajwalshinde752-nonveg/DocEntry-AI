@@ -1,17 +1,15 @@
 """
-Reading documents and pulling out field values.
+Asks the AI model to turn a document into clean field values.
 
-Two steps:
-  1. extract_text()   -> gets the raw text out of a PDF
-  2. extract_fields() -> asks an AI model to turn that text into clean values
+The document arrives either as text (digital PDF, Word, txt) or as images
+(photo, scan, scanned PDF). Both are sent to the same model.
 """
 
+import base64
 import json
 import os
 import re
-from io import BytesIO
 
-import pdfplumber
 from openai import OpenAI
 
 
@@ -42,37 +40,23 @@ def _client() -> OpenAI:
 
 
 # --------------------------------------------------------------------------
-# Step 1: PDF -> text
+# Prompt
 # --------------------------------------------------------------------------
 
-def extract_text(pdf_bytes: bytes) -> str:
-    """Read all pages of a digital PDF and return the text.
-
-    Scanned PDFs contain images, not text, so this returns almost nothing for
-    them. The app detects that and asks the user to use a text-based PDF.
-    """
-    parts: list[str] = []
-    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
-        for page in pdf.pages:
-            parts.append(page.extract_text() or "")
-    return "\n".join(parts).strip()
-
-
-def looks_scanned(text: str) -> bool:
-    return len(text.strip()) < 40
-
-
-# --------------------------------------------------------------------------
-# Step 2: text -> field values (the AI part)
-# --------------------------------------------------------------------------
-
-def _prompt(doc_type: str, fields: list[tuple[str, str]], text: str) -> str:
+def _prompt(doc_type: str, fields: list[tuple[str, str]], has_images: bool) -> str:
     field_lines = "\n".join(f"- {key}: {label}" for key, label in fields)
+    source = (
+        "The document is attached as one or more images (photos or scans). "
+        "Read the text in the images carefully."
+        if has_images
+        else "The document text is given below."
+    )
     return f"""You are a careful data-entry assistant for Indian import/export trade documents.
 
 Document type: {doc_type}
+{source}
 
-Extract these fields from the document text:
+Extract these fields:
 {field_lines}
 
 Rules:
@@ -84,13 +68,29 @@ Rules:
 - Keep dates in the format they appear in the document.
 - If a field is missing or unreadable, use "" and confidence "low".
 - If there are multiple items, put the first item's values in the fields.
-
-DOCUMENT TEXT:
----
-{text}
----
 """
 
+
+def _content(text: str, images: list[bytes] | None) -> str | list[dict]:
+    """Plain text when there are no images, otherwise text + image parts."""
+    if not images:
+        return text
+
+    parts: list[dict] = [{"type": "text", "text": text}]
+    for image in images:
+        b64 = base64.b64encode(image).decode("ascii")
+        parts.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+            }
+        )
+    return parts
+
+
+# --------------------------------------------------------------------------
+# Parsing
+# --------------------------------------------------------------------------
 
 def _parse_json(raw: str) -> dict:
     """The model should return JSON, but sometimes wraps it in ``` fences."""
@@ -99,26 +99,35 @@ def _parse_json(raw: str) -> dict:
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        # Last resort: grab the outermost { ... }
         start, end = raw.find("{"), raw.rfind("}")
         if start != -1 and end != -1:
             return json.loads(raw[start : end + 1])
         raise
 
 
+# --------------------------------------------------------------------------
+# Main call
+# --------------------------------------------------------------------------
+
 def extract_fields(
     text: str,
     doc_type: str,
     fields: list[tuple[str, str]],
+    images: list[bytes] | None = None,
 ) -> tuple[dict, dict]:
     """Return (values, confidence) for the requested fields."""
     client = _client()
-    prompt = _prompt(doc_type, fields, text)
+    prompt = _prompt(doc_type, fields, bool(images))
+
+    if images:
+        user_content = _content(prompt, images)
+    else:
+        user_content = prompt + "\n\nDOCUMENT TEXT:\n---\n" + text + "\n---\n"
 
     request = dict(
         model=model_name(),
         temperature=0,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": user_content}],
     )
 
     try:
@@ -156,4 +165,3 @@ def test_connection() -> tuple[bool, str]:
         return True, reply or "(empty reply, but the connection worked)"
     except Exception as exc:  # noqa: BLE001
         return False, str(exc)
-

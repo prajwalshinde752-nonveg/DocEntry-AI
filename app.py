@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+import documents
 import extractor
 from excel_writer import build_excel, default_filename
 from schemas import AUDIT_COLUMNS, DOCUMENT_TYPES
@@ -94,24 +95,31 @@ st.caption(
 # --------------------------------------------------------------------------
 st.subheader("1 · Upload documents")
 files = st.file_uploader(
-    "PDF files (one or many)",
-    type=["pdf"],
+    "PDF, image (JPG/PNG), Word or TXT — one or many",
+    type=documents.SUPPORTED_TYPES,
     accept_multiple_files=True,
 )
 
 if files:
-    with st.expander("Preview extracted text from the first file"):
+    with st.expander("Preview the first file"):
         try:
-            preview = extractor.extract_text(files[0].getvalue())
-            if extractor.looks_scanned(preview):
-                st.warning(
-                    "This PDF has almost no text in it — it is probably a scan. "
-                    "Text extraction needs a digital (text-based) PDF for now."
+            preview = documents.read_document(files[0].getvalue(), files[0].name)
+            if preview.has_images:
+                st.caption(
+                    f"{preview.kind} · read as image(s) — the AI will look at "
+                    f"{len(preview.images)} page(s)."
                 )
+                for image in preview.images[:2]:
+                    st.image(image, width=420)
+            elif preview.text.strip():
+                st.caption(f"{preview.kind} · read as text")
+                st.text(preview.text[:2000] + ("…" if len(preview.text) > 2000 else ""))
             else:
-                st.text(preview[:2000] + ("…" if len(preview) > 2000 else ""))
+                st.warning("This file appears to be empty.")
+            if preview.note:
+                st.info(preview.note)
         except Exception as exc:  # noqa: BLE001
-            st.error(f"Could not read the PDF: {exc}")
+            st.error(f"Could not read the file: {exc}")
 
 
 # --------------------------------------------------------------------------
@@ -145,17 +153,19 @@ if st.button("Extract fields", type="primary", disabled=not (files and chosen_fi
         for i, file in enumerate(files):
             bar.progress(i / len(files), text=f"Reading {file.name}…")
             try:
-                text = extractor.extract_text(file.getvalue())
+                doc = documents.read_document(file.getvalue(), file.name)
             except Exception as exc:  # noqa: BLE001
-                st.error(f"{file.name}: could not read PDF — {exc}")
+                st.error(f"{file.name}: could not read file — {exc}")
                 continue
 
-            if extractor.looks_scanned(text):
-                st.warning(f"{file.name}: looks like a scanned PDF, skipped.")
+            if doc.is_empty:
+                st.warning(f"{file.name}: no readable content, skipped.")
                 continue
 
             try:
-                values, confidence = extractor.extract_fields(text, doc_type, chosen_fields)
+                values, confidence = extractor.extract_fields(
+                    doc.text, doc_type, chosen_fields, images=doc.images
+                )
             except Exception as exc:  # noqa: BLE001
                 st.error(f"{file.name}: extraction failed — {exc}")
                 continue

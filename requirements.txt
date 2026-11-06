@@ -1,5 +1,7 @@
 streamlit
-pdfplumber
+pymupdf
+python-docx
+pillow
 openpyxl
 python-dotenv
 openai
