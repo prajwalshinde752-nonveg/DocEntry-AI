@@ -140,7 +140,12 @@ def load_source(source: dict) -> documents.Document:
 
 
 if sources:
-    with st.expander("Preview the first document"):
+    st.caption(
+        f"**{len(sources)} document(s) queued:** "
+        + ", ".join(f"`{s['name']}`" for s in sources[:8])
+        + (" …" if len(sources) > 8 else "")
+    )
+    with st.expander(f"Preview document 1 of {len(sources)}"):
         try:
             preview = load_source(sources[0])
             if preview.has_images:
@@ -238,6 +243,9 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
         bar.empty()
         st.session_state["rows"] = rows
         st.session_state["low"] = low
+        # New key -> a fresh review grid, so rows from an older run cannot
+        # linger and hide the newly extracted ones.
+        st.session_state["grid_id"] = st.session_state.get("grid_id", 0) + 1
         if rows:
             st.success(f"Extracted {len(rows)} document(s). Check the values before exporting.")
 
@@ -258,7 +266,7 @@ if st.session_state["rows"]:
         hide_index=True,
         num_rows="dynamic",
         column_config={k: st.column_config.TextColumn(labels[k]) for k in keys},
-        key="review_grid",
+        key=f"review_grid_{st.session_state.get('grid_id', 0)}",
     )
 
     if st.session_state["low"]:
