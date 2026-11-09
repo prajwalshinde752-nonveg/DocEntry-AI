@@ -58,7 +58,13 @@ with st.sidebar:
         st.error("No AI key found")
         st.caption("Copy `.env.example` to `.env` and add your key.")
     st.caption(f"Model: `{extractor.model_name()}`")
-    st.caption(f"Key: `{extractor.key_fingerprint()}`")
+    _fingerprint = getattr(extractor, "key_fingerprint", None)
+    if _fingerprint:
+        st.caption(f"Key: `{_fingerprint()}`")
+    else:
+        # A freshly deployed app can briefly run an older cached copy of
+        # extractor.py. Do not crash the whole page because of it.
+        st.caption("Key: `loaded (restart the app to show the fingerprint)`")
 
     if st.button("Test connection", use_container_width=True):
         ok, message = extractor.test_connection()
@@ -197,13 +203,20 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
                 continue
 
             try:
-                values, confidence = extractor.extract_fields(
-                    doc.text, doc_type, chosen_fields, images=doc.images
-                )
+                try:
+                    values, confidence = extractor.extract_fields(
+                        doc.text, doc_type, chosen_fields, images=doc.images
+                    )
+                except TypeError:
+                    # Very old cached extractor.py that predates image support.
+                    values, confidence = extractor.extract_fields(
+                        doc.text, doc_type, chosen_fields
+                    )
             except Exception as exc:  # noqa: BLE001
                 st.error(f"{name}: extraction failed")
                 with st.expander("Error details (copy this if you ask for help)"):
-                    st.code(extractor.error_detail(exc))
+                    _detail = getattr(extractor, "error_detail", None)
+                    st.code(_detail(exc) if _detail else repr(exc))
                     st.caption(
                         f"Model: {extractor.model_name()} · "
                         f"text: {len(doc.text):,} chars · "
