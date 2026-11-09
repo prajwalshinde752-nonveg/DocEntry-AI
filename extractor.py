@@ -25,6 +25,14 @@ def has_api_key() -> bool:
     return bool(_api_key())
 
 
+def key_fingerprint() -> str:
+    """A safe way to see *which* key the app is using."""
+    key = _api_key() or ""
+    if not key:
+        return "not set"
+    return f"{key[:6]}…{key[-4:]} ({len(key)} chars)"
+
+
 def model_name() -> str:
     return os.getenv("AI_MODEL", "gemini-3.1-flash-lite")
 

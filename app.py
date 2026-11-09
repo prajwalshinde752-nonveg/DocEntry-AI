@@ -58,6 +58,7 @@ with st.sidebar:
         st.error("No AI key found")
         st.caption("Copy `.env.example` to `.env` and add your key.")
     st.caption(f"Model: `{extractor.model_name()}`")
+    st.caption(f"Key: `{extractor.key_fingerprint()}`")
 
     if st.button("Test connection", use_container_width=True):
         ok, message = extractor.test_connection()
@@ -66,6 +67,12 @@ with st.sidebar:
         else:
             st.error("Connection failed")
             st.code(message[:800])
+            if "valid api key" in message.lower():
+                st.info(
+                    "Google rejected the key. If you are on the deployed app, "
+                    "fix it in Streamlit Cloud → Settings → Secrets. If this is "
+                    "localhost, check `.env`."
+                )
 
     st.divider()
     if st.button("Reset extraction", use_container_width=True):
