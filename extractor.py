@@ -69,13 +69,20 @@ Extract these fields:
 
 Rules:
 - Reply with ONLY valid JSON, in exactly this shape:
-  {{"fields": {{"<key>": "<value>"}}, "confidence": {{"<key>": "high" | "medium" | "low"}}}}
+  {{"records": [{{"fields": {{"<key>": "<value>"}}, "confidence": {{"<key>": "high"|"medium"|"low"}}}}]}}
+- Return ONE record for EVERY line item (every row of goods/services) in the document.
+  A document with three item rows must produce three records.
+  A document with a single item must produce exactly one record.
+- Document-level values (invoice number, date, seller, buyer, currency, total) must be
+  repeated in every record, so each row stands on its own.
+- If the document contains several separate invoices, return one record per line item
+  and keep each invoice's own header values.
 - Use the exact field keys listed above.
 - Copy values exactly as printed. Do NOT invent, guess or calculate anything.
 - Keep numbers as text so leading zeros are not lost (e.g. "000123").
 - Keep dates in the format they appear in the document.
 - If a field is missing or unreadable, use "" and confidence "low".
-- If there are multiple items, put the first item's values in the fields.
+- Never return more than 50 records.
 """
 
 
@@ -113,17 +120,41 @@ def _parse_json(raw: str) -> dict:
         raise
 
 
+def _normalise(record: dict, fields: list[tuple[str, str]]) -> tuple[dict, dict]:
+    values = record.get("fields", {}) or {}
+    confidence = record.get("confidence", {}) or {}
+    return (
+        {key: str(values.get(key, "") or "") for key, _ in fields},
+        {key: str(confidence.get(key, "low")) for key, _ in fields},
+    )
+
+
+def _records_from(data, fields: list[tuple[str, str]]) -> list[tuple[dict, dict]]:
+    """Accept the new {"records": [...]} shape and the old {"fields": ...} one."""
+    if isinstance(data, list):
+        return [_normalise(r, fields) for r in data if isinstance(r, dict)]
+
+    records = data.get("records")
+    if isinstance(records, list):
+        return [_normalise(r, fields) for r in records if isinstance(r, dict)]
+
+    if "fields" in data:
+        return [_normalise(data, fields)]
+
+    return []
+
+
 # --------------------------------------------------------------------------
-# Main call
+# Main calls
 # --------------------------------------------------------------------------
 
-def extract_fields(
+def extract_records(
     text: str,
     doc_type: str,
     fields: list[tuple[str, str]],
     images: list[bytes] | None = None,
-) -> tuple[dict, dict]:
-    """Return (values, confidence) for the requested fields."""
+) -> list[tuple[dict, dict]]:
+    """Return one (values, confidence) pair per line item in the document."""
     client = _client()
     prompt = _prompt(doc_type, fields, bool(images))
 
@@ -154,14 +185,23 @@ def extract_fields(
         response = client.chat.completions.create(**request)
 
     data = _parse_json(response.choices[0].message.content or "{}")
+    records = _records_from(data, fields)
 
-    values = data.get("fields", {}) or {}
-    confidence = data.get("confidence", {}) or {}
+    if not records:
+        empty = {key: "" for key, _ in fields}
+        records = [(empty, {key: "low" for key, _ in fields})]
 
-    # Keep only the fields we asked for, and make sure every key exists.
-    values = {key: str(values.get(key, "") or "") for key, _ in fields}
-    confidence = {key: str(confidence.get(key, "low")) for key, _ in fields}
-    return values, confidence
+    return records[:50]
+
+
+def extract_fields(
+    text: str,
+    doc_type: str,
+    fields: list[tuple[str, str]],
+    images: list[bytes] | None = None,
+) -> tuple[dict, dict]:
+    """Return the first record's (values, confidence)."""
+    return extract_records(text, doc_type, fields, images=images)[0]
 
 
 def error_detail(exc: Exception) -> str:

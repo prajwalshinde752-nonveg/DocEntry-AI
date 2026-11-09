@@ -8,6 +8,9 @@ photo, a Word `.docx` or `.txt` — or just paste the text straight into the app
 **Flow:** Add a document (upload or paste) → choose columns → AI extracts the fields → you review and
 edit → download Excel (fresh, or appended to your existing master register).
 
+**Every line item becomes its own row.** An invoice with three products produces
+three rows, each repeating the invoice number, date and party details.
+
 ## Setup (once)
 
 **1. Get a free AI key**
@@ -69,7 +72,7 @@ It appears in the app immediately — no other code changes.
 
 ## Current limits
 
-- One item per document. Multi-item invoices only capture the first item.
+- Documents with more than 50 line items are capped at 50 rows.
 - Scanned PDFs: only the first 5 pages are read.
 - Photos are downscaled to 1600 px wide before sending.
 - No storage — data lives in the browser session until you download it.

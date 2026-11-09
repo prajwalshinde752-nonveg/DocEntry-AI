@@ -209,7 +209,7 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
 
             try:
                 try:
-                    values, confidence = extractor.extract_fields(
+                    records = extractor.extract_records(
                         doc.text, doc_type, chosen_fields, images=doc.images
                     )
                 except TypeError:
@@ -217,6 +217,7 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
                     values, confidence = extractor.extract_fields(
                         doc.text, doc_type, chosen_fields
                     )
+                    records = [(values, confidence)]
             except Exception as exc:  # noqa: BLE001
                 st.error(f"{name}: extraction failed")
                 with st.expander("Error details (copy this if you ask for help)"):
@@ -230,15 +231,20 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
                     )
                 continue
 
-            row = dict(values)
-            row["source_file"] = name
-            row["extracted_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-            rows.append(row)
-
             labels = dict(chosen_fields)
-            for key, level in confidence.items():
-                if level != "high":
-                    low.append(f"{name} → {labels.get(key, key)} ({level})")
+            many = len(records) > 1
+            for item_no, (values, confidence) in enumerate(records, start=1):
+                row = dict(values)
+                row["source_file"] = (
+                    f"{name} [item {item_no}]" if many else name
+                )
+                row["extracted_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                rows.append(row)
+
+                where = f"{name} item {item_no}" if many else name
+                for key, level in confidence.items():
+                    if level != "high":
+                        low.append(f"{where} → {labels.get(key, key)} ({level})")
 
         bar.empty()
         st.session_state["rows"] = rows
@@ -247,7 +253,10 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
         # linger and hide the newly extracted ones.
         st.session_state["grid_id"] = st.session_state.get("grid_id", 0) + 1
         if rows:
-            st.success(f"Extracted {len(rows)} document(s). Check the values before exporting.")
+            st.success(
+                f"Extracted {len(rows)} row(s) from {len(sources)} document(s). "
+                "Check the values before exporting."
+            )
 
 # --- editable review grid ------------------------------------------------
 if st.session_state["rows"]:
