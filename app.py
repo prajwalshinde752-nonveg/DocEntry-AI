@@ -194,7 +194,15 @@ if st.button("Extract fields", type="primary", disabled=not (sources and chosen_
                     doc.text, doc_type, chosen_fields, images=doc.images
                 )
             except Exception as exc:  # noqa: BLE001
-                st.error(f"{name}: extraction failed — {exc}")
+                st.error(f"{name}: extraction failed")
+                with st.expander("Error details (copy this if you ask for help)"):
+                    st.code(extractor.error_detail(exc))
+                    st.caption(
+                        f"Model: {extractor.model_name()} · "
+                        f"text: {len(doc.text):,} chars · "
+                        f"images: {len(doc.images)} · "
+                        f"fields: {len(chosen_fields)}"
+                    )
                 continue
 
             row = dict(values)

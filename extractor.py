@@ -136,9 +136,12 @@ def extract_fields(
             response_format={"type": "json_object"},
         )
     except Exception as exc:  # noqa: BLE001
-        # Some providers/models do not support JSON mode. The prompt already
-        # asks for JSON, so retry without it instead of failing.
-        if "response_format" not in str(exc).lower():
+        # Some providers/models reject JSON mode (or certain prompts while it
+        # is on). The prompt already asks for JSON, so retry once without it.
+        message = str(exc).lower()
+        if "response_format" not in message and "400" not in message:
+            raise
+        if "api key" in message or "permission" in message:
             raise
         response = client.chat.completions.create(**request)
 
@@ -151,6 +154,20 @@ def extract_fields(
     values = {key: str(values.get(key, "") or "") for key, _ in fields}
     confidence = {key: str(confidence.get(key, "low")) for key, _ in fields}
     return values, confidence
+
+
+def error_detail(exc: Exception) -> str:
+    """Full error text, including the API's own explanation when available."""
+    parts = [str(exc)]
+    response = getattr(exc, "response", None)
+    if response is not None:
+        try:
+            body = response.text or ""
+        except Exception:  # noqa: BLE001
+            body = ""
+        if body and body not in parts[0]:
+            parts.append(body[:2000])
+    return "\n\n".join(parts)[:3000]
 
 
 def test_connection() -> tuple[bool, str]:
