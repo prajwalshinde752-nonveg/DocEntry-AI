@@ -6,6 +6,7 @@ Run with:   streamlit run app.py
 
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -32,7 +33,112 @@ def _load_cloud_secrets() -> None:
 
 _load_cloud_secrets()
 
-st.set_page_config(page_title="DocEntry-AI", page_icon="📄", layout="wide")
+ICON = Path(__file__).resolve().parent / "assets" / "icon.png"
+
+st.set_page_config(
+    page_title="DocEntry-AI",
+    page_icon=str(ICON) if ICON.exists() else None,
+    layout="wide",
+)
+
+# --------------------------------------------------------------------------
+# Look and feel
+# --------------------------------------------------------------------------
+st.markdown(
+    """
+    <style>
+      #MainMenu, footer { visibility: hidden; }
+      .block-container {
+          padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px;
+      }
+
+      /* masthead */
+      .de-head {
+          background: #1F4E5F;
+          border-radius: 4px;
+          padding: 24px 28px 22px;
+          margin-bottom: 10px;
+      }
+      .de-head .de-kicker {
+          font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+          color: #9CC0CB; font-weight: 600; margin-bottom: 8px;
+      }
+      .de-head h1 {
+          font-size: 29px; line-height: 1.15; color: #FFFFFF;
+          font-weight: 600; letter-spacing: -.01em; margin: 0 0 9px; padding: 0;
+      }
+      .de-head p {
+          color: #D3E2E7; font-size: 14px; line-height: 1.55;
+          margin: 0; max-width: 68ch;
+      }
+
+      /* section headings */
+      .de-section {
+          display: flex; align-items: baseline; gap: 11px;
+          margin: 32px 0 2px;
+      }
+      .de-section .de-num {
+          font-size: 11px; font-weight: 600; color: #1F4E5F;
+          background: #E6EEF1; border-radius: 3px; padding: 3px 9px;
+          letter-spacing: .08em;
+      }
+      .de-section .de-title {
+          font-size: 19px; font-weight: 600; color: #16232B;
+          letter-spacing: -.01em;
+      }
+      .de-hint {
+          font-size: 13px; color: #5A6B73; margin: 0 0 12px;
+      }
+
+      /* sidebar */
+      .de-brand { display: flex; align-items: center; gap: 10px; }
+      .de-brand .de-mark {
+          width: 30px; height: 30px; border-radius: 6px;
+          background: #1F4E5F; color: #FFFFFF;
+          font-size: 12.5px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+      }
+      .de-brand .de-name {
+          font-size: 16.5px; font-weight: 600; color: #16232B;
+          letter-spacing: -.01em;
+      }
+      .de-brand-sub {
+          font-size: 12px; color: #6B7C84;
+          margin: 3px 0 22px 40px;
+      }
+      .de-label {
+          font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+          color: #6B7C84; font-weight: 600; margin: 0 0 5px;
+      }
+      .de-status {
+          border-left: 2px solid #1F4E5F;
+          padding: 2px 0 2px 11px;
+          font-size: 12.5px; line-height: 1.75; color: #3C4C54;
+      }
+      .de-status b { color: #16232B; font-weight: 600; }
+      .de-dot {
+          display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+          margin-right: 6px; vertical-align: middle;
+      }
+
+      /* tighten default Streamlit spacing a little */
+      .stTabs [data-baseweb="tab-list"] { gap: 4px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def section(number: str, title: str, hint: str = "") -> None:
+    """A numbered step heading, e.g. 1  Documents."""
+    st.markdown(
+        f'<div class="de-section"><span class="de-num">{number}</span>'
+        f'<span class="de-title">{title}</span></div>',
+        unsafe_allow_html=True,
+    )
+    if hint:
+        st.markdown(f'<p class="de-hint">{hint}</p>', unsafe_allow_html=True)
+
 
 # --------------------------------------------------------------------------
 # Remember things between button clicks
@@ -46,26 +152,43 @@ st.session_state.setdefault("doc_type", None)
 # Sidebar
 # --------------------------------------------------------------------------
 with st.sidebar:
-    st.title("📄 DocEntry-AI")
-    st.caption("Documents in. Clean Excel rows out.")
+    st.markdown(
+        '<div class="de-brand"><span class="de-mark">DE</span>'
+        '<span class="de-name">DocEntry-AI</span></div>'
+        '<div class="de-brand-sub">Import &amp; export documents</div>',
+        unsafe_allow_html=True,
+    )
 
-    doc_type = st.selectbox("Document type", list(DOCUMENT_TYPES))
+    st.markdown('<div class="de-label">Document type</div>', unsafe_allow_html=True)
+    doc_type = st.selectbox(
+        "Document type", list(DOCUMENT_TYPES), label_visibility="collapsed"
+    )
 
     st.divider()
+    st.markdown('<div class="de-label">Connection</div>', unsafe_allow_html=True)
+
     if extractor.has_api_key():
-        st.success("AI key loaded")
+        dot, state = '<span class="de-dot" style="background:#2E7D32"></span>', "Key loaded"
     else:
-        st.error("No AI key found")
-        st.caption("Copy `.env.example` to `.env` and add your key.")
-    st.caption(f"Model: `{extractor.model_name()}`")
+        dot, state = '<span class="de-dot" style="background:#B3261E"></span>', "No key found"
+
     _fingerprint = getattr(extractor, "key_fingerprint", None)
     if _fingerprint:
-        st.caption(f"Key: `{_fingerprint()}`")
+        key_line = _fingerprint()
     else:
         # A freshly deployed app can briefly run an older cached copy of
         # extractor.py. Do not crash the whole page because of it.
-        st.caption("Key: `loaded (restart the app to show the fingerprint)`")
+        key_line = "loaded (restart to refresh)"
 
+    st.markdown(
+        f'<div class="de-status">{dot}<b>{state}</b><br>'
+        f"Model {extractor.model_name()}<br>Key {key_line}</div>",
+        unsafe_allow_html=True,
+    )
+    if not extractor.has_api_key():
+        st.caption("Copy `.env.example` to `.env` and add your key.")
+
+    st.write("")
     if st.button("Test connection", use_container_width=True):
         ok, message = extractor.test_connection()
         if ok:
@@ -80,7 +203,6 @@ with st.sidebar:
                     "localhost, check `.env`."
                 )
 
-    st.divider()
     if st.button("Reset extraction", use_container_width=True):
         st.session_state["rows"] = []
         st.session_state["low"] = []
@@ -96,23 +218,30 @@ if st.session_state["doc_type"] != doc_type:
 # --------------------------------------------------------------------------
 # Header
 # --------------------------------------------------------------------------
-st.title("Trade Document → Excel")
-st.caption(
-    "Upload a document, pick the columns you need, check the extracted values, "
-    "then download the register."
+st.markdown(
+    """
+    <div class="de-head">
+      <div class="de-kicker">Trade documentation</div>
+      <h1>Document to Excel register</h1>
+      <p>Add the paperwork, choose the columns your register needs, check the
+      extracted values, then download the workbook.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 
 # --------------------------------------------------------------------------
 # Step 1 — add documents (upload OR paste)
 # --------------------------------------------------------------------------
-st.subheader("1 · Add documents")
+section("1", "Documents", "Upload one or many files, or paste the text of a document.")
 
-tab_upload, tab_paste = st.tabs(["📁 Upload files", "⌨️ Paste text"])
+tab_upload, tab_paste = st.tabs(["Upload files", "Paste text"])
+
 
 with tab_upload:
     files = st.file_uploader(
-        "PDF, image (JPG/PNG), Word or TXT — one or many",
+        "PDF, image, Word or TXT files (one or many)",
         type=documents.SUPPORTED_TYPES,
         accept_multiple_files=True,
     )
@@ -169,7 +298,11 @@ if sources:
 # --------------------------------------------------------------------------
 # Step 2 — choose columns
 # --------------------------------------------------------------------------
-st.subheader("2 · Choose columns")
+section(
+    "2",
+    "Columns",
+    "These become the columns of the Excel register. Remove any you do not need.",
+)
 
 schema = DOCUMENT_TYPES[doc_type] + AUDIT_COLUMNS
 all_labels = [label for _, label in schema]
@@ -185,7 +318,11 @@ chosen_fields = [(k, label) for k, label in schema if label in chosen_labels]
 # --------------------------------------------------------------------------
 # Step 3 — extract
 # --------------------------------------------------------------------------
-st.subheader("3 · Extract and review")
+section(
+    "3",
+    "Extract and review",
+    "One row is created for each line item in the document.",
+)
 
 if st.button("Extract fields", type="primary", disabled=not (sources and chosen_fields)):
     if not extractor.has_api_key():
@@ -287,7 +424,11 @@ if st.session_state["rows"]:
     # ----------------------------------------------------------------------
     # Step 4 — export
     # ----------------------------------------------------------------------
-    st.subheader("4 · Download the register")
+    section(
+        "4",
+        "Download",
+        "Create a new register, or add these rows to an existing one.",
+    )
 
     master = st.file_uploader(
         "Optional: append to an existing master register (.xlsx)",
@@ -309,4 +450,4 @@ if st.session_state["rows"]:
         type="primary",
     )
 else:
-    st.info("Nothing extracted yet. Upload a PDF and press **Extract fields**.")
+    st.info("No rows yet. Add a document above and press **Extract fields**.")
