@@ -30,7 +30,7 @@ from reportlab.platypus import (
 )
 
 OUT = Path(__file__).resolve().parent
-PDF = OUT / "DocEntry-AI_Project_Report.pdf"
+PDF = OUT / "Project-Report.pdf"
 DIAGRAM = OUT / "architecture.png"
 
 PAGE_W, PAGE_H = A4
