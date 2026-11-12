@@ -75,7 +75,7 @@ It appears in the app immediately — no other code changes.
 
 - Documents with more than 50 line items are capped at 50 rows.
 - Scanned PDFs: only the first 5 pages are read.
-- CSV files: the first 200 rows are read.
+- CSV files: the first 50 rows are read (one row per line item).
 - Photos are downscaled to 1600 px wide before sending.
 - No storage — data lives in the browser session until you download it.
 

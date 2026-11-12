@@ -37,7 +37,7 @@ IMAGE_TYPES = {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}
 MAX_IMAGE_PAGES = 5     # only the first N pages of a scanned PDF
 MAX_WIDTH = 1600        # downscale big phone photos before sending
 JPEG_QUALITY = 85
-MAX_CSV_ROWS = 200      # keep a spreadsheet-sized export within one request
+MAX_CSV_ROWS = 50       # matches the per-document row cap in extractor.py
 
 
 @dataclass

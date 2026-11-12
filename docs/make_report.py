@@ -543,8 +543,8 @@ def implementation():
         "Word files are read paragraph by paragraph, including table cells joined with pipe "
         "characters. A CSV export is read with Python's csv module, auto-detecting comma, "
         "semicolon or tab separators, and is written out one pipe-separated line per row so the "
-        "model sees the header and the values together. Files larger than 200 rows are cut at the "
-        "200th row, with a note shown in the preview."))
+        "model sees the header and the values together. Files larger than 50 rows are cut at the "
+        "50th row, with a note shown in the preview."))
 
     story.append(h2("8.2  extractor.py — prompt, call, parse"))
     story.append(body(
@@ -728,7 +728,7 @@ def limitations():
     story += bullets([
         "One document type per run: all files in a batch must belong to the type selected in the sidebar.",
         "Scanned PDFs: only the first five pages are read, to control request size.",
-        "CSV files: only the first 200 rows are read.",
+        "CSV files: only the first 50 rows are read, matching the 50-row limit per document.",
         "Multi-item documents are capped at 50 rows per document.",
         "Photos are downscaled to 1600 px, which is enough for print but not for very small print.",
         "Handwritten text, stamps and non-Latin scripts are not reliably read.",
