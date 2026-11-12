@@ -1,0 +1,4 @@
+Invoice No,Invoice Date,Seller,Seller GSTIN,Buyer,Place of Supply,HSN,Description,Quantity,Unit,Rate,Taxable Value,IGST,CGST,SGST,Total,Currency
+INV/2026/0200,20-10-2026,Sunrise Textiles Pvt Ltd,27ABCDE1234F1Z5,Blue Ocean Exports,27-Maharashtra,5208,Cotton Fabric 40s,400,MTR,238.00,95200.00,17136.00,0.00,0.00,112336.00,INR
+INV/2026/0200,20-10-2026,Sunrise Textiles Pvt Ltd,27ABCDE1234F1Z5,Blue Ocean Exports,27-Maharashtra,5205,Cotton Yarn 20s,250,KG,150.00,37500.00,6750.00,0.00,0.00,44250.00,INR
+INV/2026/0200,20-10-2026,Sunrise Textiles Pvt Ltd,27ABCDE1234F1Z5,Blue Ocean Exports,27-Maharashtra,5402,Polyester Thread,180,ROLL,210.00,37800.00,6804.00,0.00,0.00,44604.00,INR

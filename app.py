@@ -241,7 +241,7 @@ tab_upload, tab_paste = st.tabs(["Upload files", "Paste text"])
 
 with tab_upload:
     files = st.file_uploader(
-        "PDF, image, Word or TXT files (one or many)",
+        "PDF, image, Word, TXT or CSV files (one or many)",
         type=documents.SUPPORTED_TYPES,
         accept_multiple_files=True,
     )

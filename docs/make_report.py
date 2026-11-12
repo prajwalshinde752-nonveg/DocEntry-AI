@@ -358,12 +358,12 @@ def abstract():
              "value into a spreadsheet on the other. It is slow, repetitive and prone to "
              "transposed digits, lost leading zeros and values placed in the wrong column."),
         body("DocEntry-AI removes the typing step. A user uploads one or many documents — a "
-             "digital PDF, a phone photo or scan, a Word file, or plain text pasted directly into "
-             "the app — chooses the columns required for the register, and the application reads "
-             "the document with a multimodal large language model, maps the values to a "
-             "document-specific schema, and presents them in an editable grid. One click exports "
-             "the approved rows to a fresh Excel file or appends them to an existing master "
-             "register."),
+             "digital PDF, a phone photo or scan, a Word file, a CSV export, or plain text pasted "
+             "directly into the app — chooses the columns required for the register, and the "
+             "application reads the document with a multimodal large language model, maps the "
+             "values to a document-specific schema, and presents them in an editable grid. One "
+             "click exports the approved rows to a fresh Excel file or appends them to an existing "
+             "master register."),
         body("The application is written entirely in Python and uses Streamlit for the interface, "
              "PyMuPDF, Pillow and python-docx for document handling, the OpenAI-compatible Gemini "
              "API for extraction, and openpyxl for Excel output. The operator's role shifts from "
@@ -447,7 +447,7 @@ def solution():
         [
             ("Extraction from tax invoices, shipping bills, purchase orders, bills of entry and delivery challans", "Direct filing to customs, DGFT or banking portals"),
             ("Per-type column schemas with user-selectable columns", "Replacing accounting or ERP software"),
-            ("Digital PDFs, scanned PDFs, photos, Word, TXT and pasted text", "Legal or regulatory interpretation of document contents"),
+            ("Digital PDFs, scanned PDFs, photos, Word, TXT, CSV and pasted text", "Legal or regulatory interpretation of document contents"),
             ("One row per line item, editable before export", "Handwritten documents and non-Latin scripts"),
             ("Fresh Excel register or append to an existing one", "Multi-user accounts, database storage or an audit trail"),
         ],
@@ -519,14 +519,14 @@ def tech_stack():
 def implementation():
     story = h1("8.  Implementation")
     story.append(body(
-        "The project contains five Python modules totalling about 850 lines, plus configuration "
+        "The project contains five Python modules totalling about 1,020 lines, plus configuration "
         "and sample documents."))
     story += table(
         ["File", "Lines", "Responsibility"],
         [
-            ("app.py", "312", "All UI: sidebar, the four steps, tabs, progress, review grid, download"),
+            ("app.py", "453", "All UI: sidebar, the four steps, tabs, progress, review grid, download"),
             ("extractor.py", "232", "Prompt construction, model call, JSON parsing, error reporting"),
-            ("documents.py", "124", "Any supported file → text or images"),
+            ("documents.py", "150", "Any supported file → text or images"),
             ("schemas.py", "101", "Field definitions for the five document types"),
             ("excel_writer.py", "84", "Workbook creation and append-to-master logic"),
         ],
@@ -541,7 +541,10 @@ def implementation():
         "are rendered at 150 dpi and re-encoded as JPEG. Photos are EXIF-rotated, converted to RGB "
         "and downscaled to 1600 px wide, which keeps phone photos within a sensible request size. "
         "Word files are read paragraph by paragraph, including table cells joined with pipe "
-        "characters."))
+        "characters. A CSV export is read with Python's csv module, auto-detecting comma, "
+        "semicolon or tab separators, and is written out one pipe-separated line per row so the "
+        "model sees the header and the values together. Files larger than 200 rows are cut at the "
+        "200th row, with a note shown in the preview."))
 
     story.append(h2("8.2  extractor.py — prompt, call, parse"))
     story.append(body(
@@ -605,6 +608,7 @@ def workflow():
             ("JPG / PNG / WEBP / BMP / TIFF", "Pillow load, EXIF rotation, downscale to 1600 px", "Phone photos of documents"),
             ("DOCX", "Paragraphs and table cells via python-docx", "Documents received in Word"),
             ("TXT", "Decoded as UTF-8 with replacement for bad bytes", "Exported text from other systems"),
+            ("CSV", "Parsed with Python's csv module; comma, semicolon or tab separated", "Exports from Excel, Tally or a portal"),
             ("Pasted text", "Used as-is, with a user-supplied row name", "Emails and portal pages"),
         ],
         [4.6, 7.2, 4.0],
@@ -679,8 +683,9 @@ def testing():
             ("4", "Pasted text", "Invoice text pasted in the tab", "1 row named by the user", "Pass"),
             ("5", "Multi-item invoice", "sample_tax_invoice_multi.pdf", "3 rows, 3 products", "Pass"),
             ("6", "Batch upload", "PDF + JPG + DOCX together", "3 rows in one register", "Pass"),
-            ("7", "Invalid API key", "Wrong key in secrets", "Clear error, no crash", "Pass"),
-            ("8", "Unsupported file", "e.g. .xlsx used as input", "Readable message, file skipped", "Pass"),
+            ("7", "CSV export, three line items", "sample_tax_invoice.csv", "3 rows, values match the file", "Pass"),
+            ("8", "Invalid API key", "Wrong key in secrets", "Clear error, no crash", "Pass"),
+            ("9", "Unsupported file", "e.g. .xlsx used as input", "Readable message, file skipped", "Pass"),
         ],
         [1.0, 4.6, 4.6, 3.4, 2.2],
     )
@@ -723,6 +728,7 @@ def limitations():
     story += bullets([
         "One document type per run: all files in a batch must belong to the type selected in the sidebar.",
         "Scanned PDFs: only the first five pages are read, to control request size.",
+        "CSV files: only the first 200 rows are read.",
         "Multi-item documents are capped at 50 rows per document.",
         "Photos are downscaled to 1600 px, which is enough for print but not for very small print.",
         "Handwritten text, stamps and non-Latin scripts are not reliably read.",

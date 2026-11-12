@@ -6,9 +6,10 @@ Reads any supported document into one of two things:
 
 The extractor then sends whichever one it got to the AI model.
 
-Supported: pdf, png, jpg/jpeg, webp, bmp, tiff, docx, txt
+Supported: pdf, png, jpg/jpeg, webp, bmp, tiff, docx, txt, csv
 """
 
+import csv
 import io
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,6 +29,7 @@ SUPPORTED_TYPES = [
     "tiff",
     "docx",
     "txt",
+    "csv",
 ]
 
 IMAGE_TYPES = {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}
@@ -35,6 +37,7 @@ IMAGE_TYPES = {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}
 MAX_IMAGE_PAGES = 5     # only the first N pages of a scanned PDF
 MAX_WIDTH = 1600        # downscale big phone photos before sending
 JPEG_QUALITY = 85
+MAX_CSV_ROWS = 200      # keep a spreadsheet-sized export within one request
 
 
 @dataclass
@@ -106,6 +109,27 @@ def _read_docx(data: bytes) -> Document:
     return Document(kind="docx", text="\n".join(p for p in parts if p.strip()))
 
 
+def _read_csv(data: bytes) -> Document:
+    """Turn a spreadsheet export into lines the model can read as a table."""
+    text = data.decode("utf-8-sig", errors="replace")
+
+    # Commas are normal, but exports from Excel on some machines use ; or tabs.
+    try:
+        dialect = csv.Sniffer().sniff(text[:4096], delimiters=",;\t|")
+    except csv.Error:
+        dialect = csv.excel
+
+    rows = [row for row in csv.reader(io.StringIO(text), dialect) if any(row)]
+    lines = [" | ".join(cell.strip() for cell in row) for row in rows[:MAX_CSV_ROWS]]
+
+    note = ""
+    if len(rows) > MAX_CSV_ROWS:
+        note = f"Only the first {MAX_CSV_ROWS} rows were read."
+
+    return Document(kind="csv", text="\n".join(lines), note=note)
+
+
+
 def read_document(data: bytes, filename: str) -> Document:
     ext = _extension(filename)
 
@@ -121,4 +145,6 @@ def read_document(data: bytes, filename: str) -> Document:
         return _read_image(data)
     if ext == "docx":
         return _read_docx(data)
+    if ext == "csv":
+        return _read_csv(data)
     return Document(kind="txt", text=data.decode("utf-8", errors="replace"))

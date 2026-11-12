@@ -3,7 +3,8 @@
 Turn import/export trade documents into clean Excel register rows.
 
 **Accepted input:** upload a PDF (digital *or* scanned), a JPG/PNG/WEBP/BMP/TIFF
-photo, a Word `.docx` or `.txt` — or just paste the text straight into the app.
+photo, a Word `.docx`, a `.txt` or a `.csv` export — or just paste the text
+straight into the app.
 
 **Flow:** Add a document (upload or paste) → choose columns → AI extracts the fields → you review and
 edit → download Excel (fresh, or appended to your existing master register).
@@ -59,7 +60,7 @@ A browser tab opens at http://localhost:8501
 | File | What it does |
 |---|---|
 | `app.py` | The screens, and the order they appear in |
-| `documents.py` | Turns any supported file into text or images |
+| `documents.py` | Turns any supported file into text or images (PDF, image, DOCX, TXT, CSV) |
 | `extractor.py` | Sends the text/images to the AI, parses the fields |
 | `schemas.py` | The fields we extract for each document type |
 | `excel_writer.py` | Builds / appends the Excel register |
@@ -74,6 +75,7 @@ It appears in the app immediately — no other code changes.
 
 - Documents with more than 50 line items are capped at 50 rows.
 - Scanned PDFs: only the first 5 pages are read.
+- CSV files: the first 200 rows are read.
 - Photos are downscaled to 1600 px wide before sending.
 - No storage — data lives in the browser session until you download it.
 
