@@ -54,21 +54,21 @@ st.markdown(
 
       /* masthead */
       .de-head {
-          background: #1F4E5F;
+          background: #1B2A41;
           border-radius: 4px;
           padding: 24px 28px 22px;
           margin-bottom: 10px;
       }
       .de-head .de-kicker {
           font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
-          color: #9CC0CB; font-weight: 600; margin-bottom: 8px;
+          color: #A6B4C4; font-weight: 600; margin-bottom: 8px;
       }
       .de-head h1 {
           font-size: 29px; line-height: 1.15; color: #FFFFFF;
           font-weight: 600; letter-spacing: -.01em; margin: 0 0 9px; padding: 0;
       }
       .de-head p {
-          color: #D3E2E7; font-size: 14px; line-height: 1.55;
+          color: #D2D9E0; font-size: 14px; line-height: 1.55;
           margin: 0; max-width: 68ch;
       }
 
@@ -78,44 +78,44 @@ st.markdown(
           margin: 32px 0 2px;
       }
       .de-section .de-num {
-          font-size: 11px; font-weight: 600; color: #1F4E5F;
-          background: #E6EEF1; border-radius: 3px; padding: 3px 9px;
+          font-size: 11px; font-weight: 600; color: #1B2A41;
+          background: #EDEFF2; border-radius: 3px; padding: 3px 9px;
           letter-spacing: .08em;
       }
       .de-section .de-title {
-          font-size: 19px; font-weight: 600; color: #16232B;
+          font-size: 19px; font-weight: 600; color: #33383D;
           letter-spacing: -.01em;
       }
       .de-hint {
-          font-size: 13px; color: #5A6B73; margin: 0 0 12px;
+          font-size: 13px; color: #4A5057; margin: 0 0 12px;
       }
 
       /* sidebar */
       .de-brand { display: flex; align-items: center; gap: 10px; }
       .de-brand .de-mark {
           width: 30px; height: 30px; border-radius: 6px;
-          background: #1F4E5F; color: #FFFFFF;
+          background: #1B2A41; color: #FFFFFF;
           font-size: 12.5px; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
       }
       .de-brand .de-name {
-          font-size: 16.5px; font-weight: 600; color: #16232B;
+          font-size: 16.5px; font-weight: 600; color: #33383D;
           letter-spacing: -.01em;
       }
       .de-brand-sub {
-          font-size: 12px; color: #6B7C84;
+          font-size: 12px; color: #6E767D;
           margin: 3px 0 22px 40px;
       }
       .de-label {
           font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
-          color: #6B7C84; font-weight: 600; margin: 0 0 5px;
+          color: #6E767D; font-weight: 600; margin: 0 0 5px;
       }
       .de-status {
-          border-left: 2px solid #1F4E5F;
+          border-left: 2px solid #1B2A41;
           padding: 2px 0 2px 11px;
-          font-size: 12.5px; line-height: 1.75; color: #3C4C54;
+          font-size: 12.5px; line-height: 1.75; color: #4A5057;
       }
-      .de-status b { color: #16232B; font-weight: 600; }
+      .de-status b { color: #33383D; font-weight: 600; }
       .de-dot {
           display: inline-block; width: 7px; height: 7px; border-radius: 50%;
           margin-right: 6px; vertical-align: middle;
