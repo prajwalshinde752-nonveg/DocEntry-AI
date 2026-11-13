@@ -12,6 +12,7 @@ DOCUMENT_TYPES = {
     "Tax Invoice": [
         ("invoice_no", "Invoice No."),
         ("invoice_date", "Invoice Date"),
+        ("po_no", "PO No."),
         ("seller_name", "Seller Name"),
         ("seller_gstin", "Seller GSTIN"),
         ("buyer_name", "Buyer Name"),

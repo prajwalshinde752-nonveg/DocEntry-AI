@@ -617,7 +617,7 @@ def workflow():
     story += table(
         ["Document type", "Fields"],
         [
-            ("Tax Invoice", "19 fields — invoice no, date, seller/buyer, GSTIN, place of supply, HSN, description, quantity, unit, rate, taxable value, IGST, CGST, SGST, total, currency"),
+            ("Tax Invoice", "20 fields — invoice no, date, PO no, seller/buyer, GSTIN, place of supply, HSN, description, quantity, unit, rate, taxable value, IGST, CGST, SGST, total, currency"),
             ("Shipping Bill", "17 fields — bill no, date, exporter, IEC, GSTIN, invoice, ports, vessel, HSN, description, quantity, FOB value, currency, scheme"),
             ("Purchase Order", "12 fields — PO no, date, buyer, supplier, HSN, description, quantity, unit, rate, total, currency, delivery terms"),
             ("Bill of Entry", "14 fields — BE no, date, importer, IEC, GSTIN, invoice, ports, HSN, description, quantity, assessable value, duty, currency"),
@@ -819,7 +819,7 @@ def appendix():
     story += table(
         ["Document type", "Field keys"],
         [
-            ("Tax Invoice", "invoice_no, invoice_date, seller_name, seller_gstin, buyer_name, buyer_gstin, buyer_address, place_of_supply, hsn_code, description, quantity, unit, rate, taxable_value, igst_amount, cgst_amount, sgst_amount, total_value, currency"),
+            ("Tax Invoice", "invoice_no, invoice_date, po_no, seller_name, seller_gstin, buyer_name, buyer_gstin, buyer_address, place_of_supply, hsn_code, description, quantity, unit, rate, taxable_value, igst_amount, cgst_amount, sgst_amount, total_value, currency"),
             ("Shipping Bill", "shipping_bill_no, shipping_bill_date, exporter_name, iec_code, gstin, invoice_no, invoice_date, port_of_loading, port_of_discharge, vessel_name, hsn_code, description, quantity, unit, fob_value, currency, scheme"),
             ("Purchase Order", "po_no, po_date, buyer_name, supplier_name, hsn_code, description, quantity, unit, rate, total_value, currency, delivery_terms"),
             ("Bill of Entry", "be_no, be_date, importer_name, iec_code, gstin, invoice_no, port_of_loading, port_of_discharge, hsn_code, description, quantity, assessable_value, total_duty, currency"),
