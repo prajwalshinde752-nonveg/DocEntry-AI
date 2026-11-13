@@ -52,6 +52,43 @@ st.markdown(
           padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px;
       }
 
+      /* no pure white surfaces */
+      .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+          background-color: #F2F4F6;
+      }
+      [data-testid="stSidebar"] { background-color: #E7EAED; }
+      [data-testid="stHeader"] { background-color: #F2F4F6; }
+      [data-testid="stFileUploaderDropzone"] {
+          background-color: #E9ECEF; border-color: #C6CCD2;
+      }
+      [data-testid="stFileUploaderDropzone"]:hover { border-color: #1B2A41; }
+      .stTextInput input, .stTextArea textarea,
+      [data-baseweb="input"], [data-baseweb="textarea"],
+      [data-baseweb="select"] > div {
+          background-color: #E9ECEF !important;
+          border-color: #C6CCD2 !important;
+      }
+      .stButton > button {
+          background-color: #E4E7EA; border: 1px solid #C6CCD2; color: #33383D;
+      }
+      .stButton > button:hover {
+          background-color: #DCE0E4; border-color: #1B2A41; color: #1B2A41;
+      }
+      .stButton > button[kind="primary"] {
+          background-color: #1B2A41; border-color: #1B2A41; color: #F5F7F8;
+      }
+      [data-testid="stExpander"] details {
+          background-color: #EAEDF0; border-color: #D3D8DD;
+      }
+      [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
+          background-color: #E9ECEF;
+      }
+      .stTabs [data-baseweb="tab-list"] { background-color: transparent; }
+      .stTabs [data-baseweb="tab"] { color: #4A5057; }
+      .stTabs [aria-selected="true"] { color: #1B2A41; }
+      [data-baseweb="popover"] ul, [role="listbox"] { background-color: #EDEFF2; }
+      .stCode, pre { background-color: #E7EAED !important; }
+
       /* masthead */
       .de-head {
           background: #1B2A41;
@@ -64,7 +101,7 @@ st.markdown(
           color: #A6B4C4; font-weight: 600; margin-bottom: 8px;
       }
       .de-head h1 {
-          font-size: 29px; line-height: 1.15; color: #FFFFFF;
+          font-size: 29px; line-height: 1.15; color: #F5F7F8;
           font-weight: 600; letter-spacing: -.01em; margin: 0 0 9px; padding: 0;
       }
       .de-head p {
@@ -85,7 +122,7 @@ st.markdown(
       .de-step b {
           display: inline-flex; align-items: center; justify-content: center;
           width: 19px; height: 19px; border-radius: 50%;
-          background: #4C5257; color: #FFFFFF;
+          background: #4C5257; color: #F5F7F8;
           font-size: 11px; font-weight: 600;
       }
       .de-sep { width: 1px; height: 16px; background: #4C5257; }
@@ -112,7 +149,7 @@ st.markdown(
       .de-brand { display: flex; align-items: center; gap: 10px; }
       .de-brand .de-mark {
           width: 30px; height: 30px; border-radius: 6px;
-          background: #1B2A41; color: #FFFFFF;
+          background: #1B2A41; color: #F5F7F8;
           font-size: 12.5px; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
       }
