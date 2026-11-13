@@ -72,6 +72,24 @@ st.markdown(
           margin: 0; max-width: 68ch;
       }
 
+      /* step strip */
+      .de-steps {
+          display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+          background: #33383D; border-radius: 4px;
+          padding: 12px 18px; margin: 0 0 26px;
+      }
+      .de-step {
+          display: flex; align-items: center; gap: 8px;
+          font-size: 12.5px; color: #E4E6E8;
+      }
+      .de-step b {
+          display: inline-flex; align-items: center; justify-content: center;
+          width: 19px; height: 19px; border-radius: 50%;
+          background: #4C5257; color: #FFFFFF;
+          font-size: 11px; font-weight: 600;
+      }
+      .de-sep { width: 1px; height: 16px; background: #4C5257; }
+
       /* section headings */
       .de-section {
           display: flex; align-items: baseline; gap: 11px;
@@ -225,6 +243,15 @@ st.markdown(
       <h1>Document to Excel register</h1>
       <p>Add the paperwork, choose the columns your register needs, check the
       extracted values, then download the workbook.</p>
+    </div>
+    <div class="de-steps">
+      <span class="de-step"><b>1</b> Documents</span>
+      <span class="de-sep"></span>
+      <span class="de-step"><b>2</b> Columns</span>
+      <span class="de-sep"></span>
+      <span class="de-step"><b>3</b> Extract and review</span>
+      <span class="de-sep"></span>
+      <span class="de-step"><b>4</b> Download</span>
     </div>
     """,
     unsafe_allow_html=True,
