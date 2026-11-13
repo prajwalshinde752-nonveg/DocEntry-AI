@@ -52,46 +52,50 @@ st.markdown(
           padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1180px;
       }
 
-      /* no pure white surfaces */
+      /* dark charcoal surfaces */
       .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
-          background-color: #F2F4F6;
+          background-color: #23272B;
       }
-      [data-testid="stSidebar"] { background-color: #E7EAED; }
-      [data-testid="stHeader"] { background-color: #F2F4F6; }
+      [data-testid="stSidebar"] { background-color: #1D2125; }
+      [data-testid="stHeader"] { background-color: #23272B; }
       [data-testid="stFileUploaderDropzone"] {
-          background-color: #E9ECEF; border-color: #C6CCD2;
+          background-color: #2B3035; border-color: #3B4147;
       }
-      [data-testid="stFileUploaderDropzone"]:hover { border-color: #1B2A41; }
+      [data-testid="stFileUploaderDropzone"]:hover { border-color: #4F7196; }
       .stTextInput input, .stTextArea textarea,
       [data-baseweb="input"], [data-baseweb="textarea"],
       [data-baseweb="select"] > div {
-          background-color: #E9ECEF !important;
-          border-color: #C6CCD2 !important;
+          background-color: #2B3035 !important;
+          border-color: #3B4147 !important;
+          color: #E3E6E8 !important;
       }
       .stButton > button {
-          background-color: #E4E7EA; border: 1px solid #C6CCD2; color: #33383D;
+          background-color: #2F353A; border: 1px solid #3B4147; color: #E3E6E8;
       }
       .stButton > button:hover {
-          background-color: #DCE0E4; border-color: #1B2A41; color: #1B2A41;
+          background-color: #383F45; border-color: #4F7196; color: #F5F7F8;
       }
       .stButton > button[kind="primary"] {
-          background-color: #1B2A41; border-color: #1B2A41; color: #F5F7F8;
+          background-color: #4F7196; border-color: #4F7196; color: #F5F7F8;
       }
       [data-testid="stExpander"] details {
-          background-color: #EAEDF0; border-color: #D3D8DD;
+          background-color: #2B3035; border-color: #3B4147;
       }
       [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
-          background-color: #E9ECEF;
+          background-color: #2B3035;
       }
       .stTabs [data-baseweb="tab-list"] { background-color: transparent; }
-      .stTabs [data-baseweb="tab"] { color: #4A5057; }
-      .stTabs [aria-selected="true"] { color: #1B2A41; }
-      [data-baseweb="popover"] ul, [role="listbox"] { background-color: #EDEFF2; }
-      .stCode, pre { background-color: #E7EAED !important; }
+      .stTabs [data-baseweb="tab"] { color: #A2ABB2; }
+      .stTabs [aria-selected="true"] { color: #F5F7F8; }
+      [data-baseweb="popover"] ul, [role="listbox"] { background-color: #2B3035; }
+      .stCode, pre { background-color: #1D2125 !important; }
+      [data-testid="stMarkdownContainer"] p { color: #E3E6E8; }
+      label, .stSelectbox label { color: #A2ABB2 !important; }
+      [data-testid="stWidgetLabel"] p { color: #A2ABB2; }
 
       /* masthead */
       .de-head {
-          background: #1B2A41;
+          background: #21364F;
           border-radius: 4px;
           padding: 24px 28px 22px;
           margin-bottom: 10px;
@@ -112,7 +116,7 @@ st.markdown(
       /* step strip */
       .de-steps {
           display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-          background: #33383D; border-radius: 4px;
+          background: #2B3035; border: 1px solid #3B4147; border-radius: 4px;
           padding: 12px 18px; margin: 0 0 26px;
       }
       .de-step {
@@ -122,10 +126,10 @@ st.markdown(
       .de-step b {
           display: inline-flex; align-items: center; justify-content: center;
           width: 19px; height: 19px; border-radius: 50%;
-          background: #4C5257; color: #F5F7F8;
+          background: #454C53; color: #F5F7F8;
           font-size: 11px; font-weight: 600;
       }
-      .de-sep { width: 1px; height: 16px; background: #4C5257; }
+      .de-sep { width: 1px; height: 16px; background: #454C53; }
 
       /* section headings */
       .de-section {
@@ -133,44 +137,44 @@ st.markdown(
           margin: 32px 0 2px;
       }
       .de-section .de-num {
-          font-size: 11px; font-weight: 600; color: #1B2A41;
-          background: #EDEFF2; border-radius: 3px; padding: 3px 9px;
+          font-size: 11px; font-weight: 600; color: #B9C8D6;
+          background: #2E3439; border-radius: 3px; padding: 3px 9px;
           letter-spacing: .08em;
       }
       .de-section .de-title {
-          font-size: 19px; font-weight: 600; color: #33383D;
+          font-size: 19px; font-weight: 600; color: #E3E6E8;
           letter-spacing: -.01em;
       }
       .de-hint {
-          font-size: 13px; color: #4A5057; margin: 0 0 12px;
+          font-size: 13px; color: #A2ABB2; margin: 0 0 12px;
       }
 
       /* sidebar */
       .de-brand { display: flex; align-items: center; gap: 10px; }
       .de-brand .de-mark {
           width: 30px; height: 30px; border-radius: 6px;
-          background: #1B2A41; color: #F5F7F8;
+          background: #21364F; color: #F5F7F8;
           font-size: 12.5px; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
       }
       .de-brand .de-name {
-          font-size: 16.5px; font-weight: 600; color: #33383D;
+          font-size: 16.5px; font-weight: 600; color: #E3E6E8;
           letter-spacing: -.01em;
       }
       .de-brand-sub {
-          font-size: 12px; color: #6E767D;
+          font-size: 12px; color: #98A1A8;
           margin: 3px 0 22px 40px;
       }
       .de-label {
           font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
-          color: #6E767D; font-weight: 600; margin: 0 0 5px;
+          color: #98A1A8; font-weight: 600; margin: 0 0 5px;
       }
       .de-status {
-          border-left: 2px solid #1B2A41;
+          border-left: 2px solid #4F7196;
           padding: 2px 0 2px 11px;
-          font-size: 12.5px; line-height: 1.75; color: #4A5057;
+          font-size: 12.5px; line-height: 1.75; color: #A2ABB2;
       }
-      .de-status b { color: #33383D; font-weight: 600; }
+      .de-status b { color: #E3E6E8; font-weight: 600; }
       .de-dot {
           display: inline-block; width: 7px; height: 7px; border-radius: 50%;
           margin-right: 6px; vertical-align: middle;
