@@ -12,6 +12,36 @@ edit → download Excel (fresh, or appended to your existing master register).
 **Every line item becomes its own row.** An invoice with three products produces
 three rows, each repeating the invoice number, date and party details.
 
+Long documents are read in batches, so pages and line items are no longer cut
+off at an arbitrary limit.
+
+## What the app checks for you
+
+Before export, every row is checked automatically:
+
+- **GSTIN** — format and checksum (covers seller, buyer, supplier and recipient).
+- **HSN** — must be 4, 6 or 8 digits (`8471`, `847130`, `8471.30` are accepted).
+- **Totals** — taxable value + IGST + CGST + SGST must match the total (within ₹1).
+- **Dates** — unrecognised formats are flagged but left exactly as extracted.
+- **Duplicates** — invoice numbers already in the uploaded master register, or
+  repeated across source documents.
+- **Empty document numbers** — invoice / PO / challan / bill numbers.
+
+Flagged cells are colour-highlighted in the Excel file and listed on a
+`Checks` sheet. Low-confidence AI fields are listed separately.
+
+## Batch, history and custom columns
+
+- **Batch export** — extract several documents (even different document types)
+  and download one workbook. Each document type gets its own sheet.
+- **History** — every extraction is saved in `.docentry/history.db`. Reopen a
+  run from the sidebar to review, add it to a batch, or delete it.
+- **Custom columns** — in step 2, add `key=Heading` lines (or just headings) to
+  extend any document type; save the selection as a reusable preset.
+- **Custom document types** — choose *Custom document type* in the sidebar, name
+  it, add its fields, and save it. It appears in the dropdown next time.
+- **CSV / JSON** download is offered next to Excel.
+
 ## Setup (once)
 
 **1. Get a free AI key**
@@ -61,25 +91,29 @@ A browser tab opens at http://localhost:8501
 |---|---|
 | `app.py` | The screens, and the order they appear in |
 | `documents.py` | Turns any supported file into text or images (PDF, image, DOCX, TXT, CSV) |
-| `extractor.py` | Sends the text/images to the AI, parses the fields |
-| `schemas.py` | The fields we extract for each document type |
-| `excel_writer.py` | Builds / appends the Excel register |
+| `extractor.py` | Sends the text/images to the AI, batches long documents, parses the fields |
+| `schemas.py` | The fields we extract for each document type, plus custom-column parsing |
+| `validation.py` | GSTIN/HSN/total/date/duplicate checks |
+| `excel_writer.py` | Builds / appends the styled Excel register, plus CSV and JSON |
+| `history.py` | Local SQLite store for runs, column presets and custom document types |
 | `samples/` | Test documents |
 
 ## Adding a document type
 
 Open `schemas.py`, add an entry to `DOCUMENT_TYPES` with `(key, label)` pairs.
-It appears in the app immediately — no other code changes.
+It appears in the app immediately — no other code changes. You can also create
+one from the app without touching the code.
 
 ## Current limits
 
-- Documents with more than 50 line items are capped at 50 rows.
-- Scanned PDFs: only the first 5 pages are read.
-- CSV files: the first 50 rows are read (one row per line item).
+- One API call handles 4 scanned pages or ~24,000 characters of text; longer
+  documents are split automatically and the records are merged.
+- 1,000 extracted rows is a safety ceiling per document.
 - Photos are downscaled to 1600 px wide before sending.
-- No storage — data lives in the browser session until you download it.
+- Data lives in the browser session plus the local history database until you
+  download it. On Streamlit Community Cloud that database is temporary.
 
-These are deliberate, so the first version stays finishable.
+These are deliberate, so the app stays predictable.
 
 ## Deploy a public link (free)
 

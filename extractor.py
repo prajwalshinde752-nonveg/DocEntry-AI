@@ -1,8 +1,10 @@
 """
 Asks the AI model to turn a document into clean field values.
 
-The document arrives either as text (digital PDF, Word, txt) or as images
-(photo, scan, scanned PDF). Both are sent to the same model.
+The document arrives either as text (digital PDF, Word, txt, csv) or as images
+(photo, scan, scanned PDF). Both are sent to the same model. Long documents are
+split into batches and the records are merged, so there is no fixed page or row
+limit.
 """
 
 import base64
@@ -11,6 +13,12 @@ import os
 import re
 
 from openai import OpenAI
+
+# How much one API call carries. Scans go in small batches so the model can
+# still read every page at full resolution.
+IMAGE_PAGES_PER_CALL = 4
+TEXT_CHARS_PER_CALL = 24_000
+MAX_RECORDS = 1_000  # a sanity guard, not a feature limit
 
 
 # --------------------------------------------------------------------------
@@ -51,7 +59,13 @@ def _client() -> OpenAI:
 # Prompt
 # --------------------------------------------------------------------------
 
-def _prompt(doc_type: str, fields: list[tuple[str, str]], has_images: bool) -> str:
+def _prompt(
+    doc_type: str,
+    fields: list[tuple[str, str]],
+    has_images: bool,
+    part: int = 1,
+    parts: int = 1,
+) -> str:
     field_lines = "\n".join(f"- {key}: {label}" for key, label in fields)
     source = (
         "The document is attached as one or more images (photos or scans). "
@@ -59,11 +73,18 @@ def _prompt(doc_type: str, fields: list[tuple[str, str]], has_images: bool) -> s
         if has_images
         else "The document text is given below."
     )
+    part_note = ""
+    if parts > 1:
+        part_note = (
+            f"\nThis is part {part} of {parts} of a longer document. Extract every "
+            "line item you can see in THIS part. Do not invent or repeat items from "
+            "other parts.\n"
+        )
     return f"""You are a careful data-entry assistant for Indian import/export trade documents.
 
 Document type: {doc_type}
 {source}
-
+{part_note}
 Extract these fields:
 {field_lines}
 
@@ -71,8 +92,8 @@ Rules:
 - Reply with ONLY valid JSON, in exactly this shape:
   {{"records": [{{"fields": {{"<key>": "<value>"}}, "confidence": {{"<key>": "high"|"medium"|"low"}}}}]}}
 - Return ONE record for EVERY line item (every row of goods/services) in the document.
-  A document with three item rows must produce three records.
-  A document with a single item must produce exactly one record.
+  A document with thirty item rows must produce thirty records. Never stop early
+  and never merge rows together.
 - Document-level values (invoice number, date, seller, buyer, currency, total) must be
   repeated in every record, so each row stands on its own.
 - If the document contains several separate invoices, return one record per line item
@@ -82,7 +103,6 @@ Rules:
 - Keep numbers as text so leading zeros are not lost (e.g. "000123").
 - Keep dates in the format they appear in the document.
 - If a field is missing or unreadable, use "" and confidence "low".
-- Never return more than 50 records.
 """
 
 
@@ -145,18 +165,61 @@ def _records_from(data, fields: list[tuple[str, str]]) -> list[tuple[dict, dict]
 
 
 # --------------------------------------------------------------------------
+# Chunking
+# --------------------------------------------------------------------------
+
+def _text_chunks(text: str, size: int = TEXT_CHARS_PER_CALL) -> list[str]:
+    """Split on line boundaries so a table row is never cut in half."""
+    if len(text) <= size:
+        return [text]
+
+    chunks: list[str] = []
+    current = ""
+    for line in text.splitlines(keepends=True):
+        while len(line) > size:  # a single enormous line
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.append(line[:size])
+            line = line[size:]
+        if len(current) + len(line) > size and current:
+            chunks.append(current)
+            current = line
+        else:
+            current += line
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def _image_batches(images: list[bytes], size: int = IMAGE_PAGES_PER_CALL) -> list[list[bytes]]:
+    return [images[i : i + size] for i in range(0, len(images), size)] or [[]]
+
+
+def _plan(text: str, images: list[bytes]) -> list[tuple[str, list[bytes]]]:
+    """Return the (text, images) pairs that make up one document."""
+    if images:
+        # Scanned documents: send pages in batches, carrying any embedded text
+        # along with the first batch only.
+        batches = _image_batches(images)
+        return [(text if index == 0 else "", batch) for index, batch in enumerate(batches)]
+    return [(chunk, []) for chunk in _text_chunks(text)]
+
+
+# --------------------------------------------------------------------------
 # Main calls
 # --------------------------------------------------------------------------
 
-def extract_records(
+def _extract_once(
     text: str,
     doc_type: str,
     fields: list[tuple[str, str]],
-    images: list[bytes] | None = None,
+    images: list[bytes],
+    part: int,
+    parts: int,
 ) -> list[tuple[dict, dict]]:
-    """Return one (values, confidence) pair per line item in the document."""
     client = _client()
-    prompt = _prompt(doc_type, fields, bool(images))
+    prompt = _prompt(doc_type, fields, bool(images), part=part, parts=parts)
 
     if images:
         user_content = _content(prompt, images)
@@ -185,13 +248,40 @@ def extract_records(
         response = client.chat.completions.create(**request)
 
     data = _parse_json(response.choices[0].message.content or "{}")
-    records = _records_from(data, fields)
+    return _records_from(data, fields)
+
+
+def extract_records(
+    text: str,
+    doc_type: str,
+    fields: list[tuple[str, str]],
+    images: list[bytes] | None = None,
+) -> list[tuple[dict, dict]]:
+    """Return one (values, confidence) pair per line item in the document."""
+    images = images or []
+    plan = _plan(text, images)
+    records: list[tuple[dict, dict]] = []
+
+    for index, (chunk_text, chunk_images) in enumerate(plan, start=1):
+        records.extend(
+            _extract_once(
+                chunk_text,
+                doc_type,
+                fields,
+                chunk_images,
+                part=index,
+                parts=len(plan),
+            )
+        )
+        if len(records) >= MAX_RECORDS:
+            records = records[:MAX_RECORDS]
+            break
 
     if not records:
         empty = {key: "" for key, _ in fields}
         records = [(empty, {key: "low" for key, _ in fields})]
 
-    return records[:50]
+    return records
 
 
 def extract_fields(

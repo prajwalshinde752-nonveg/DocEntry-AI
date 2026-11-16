@@ -4,7 +4,8 @@ Reads any supported document into one of two things:
   * text   — digital PDFs, Word files, plain text
   * images — photos/scans (JPG, PNG) and scanned PDFs
 
-The extractor then sends whichever one it got to the AI model.
+The extractor then sends whichever one it got to the AI model. Long documents
+are split into batches by the extractor, so nothing is truncated here.
 
 Supported: pdf, png, jpg/jpeg, webp, bmp, tiff, docx, txt, csv
 """
@@ -34,10 +35,8 @@ SUPPORTED_TYPES = [
 
 IMAGE_TYPES = {"png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"}
 
-MAX_IMAGE_PAGES = 5     # only the first N pages of a scanned PDF
 MAX_WIDTH = 1600        # downscale big phone photos before sending
 JPEG_QUALITY = 85
-MAX_CSV_ROWS = 50       # matches the per-document row cap in extractor.py
 
 
 @dataclass
@@ -79,19 +78,20 @@ def _read_pdf(data: bytes) -> Document:
 
         # Enough text -> it is a digital PDF, no need for vision.
         if len(text) >= 40:
-            return Document(kind="pdf", text=text)
+            note = ""
+            if len(pages) > 1:
+                note = f"Read all {len(pages)} pages."
+            return Document(kind="pdf", text=text, note=note)
 
-        # Otherwise it is a scan: render pages as images.
+        # Otherwise it is a scan: render every page as an image. The extractor
+        # sends these in small batches so long scans are not truncated.
         images = []
-        for page in pages[:MAX_IMAGE_PAGES]:
+        for page in pages:
             pix = page.get_pixmap(dpi=150, alpha=False)
             img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
             images.append(_to_jpeg(img))
 
-        note = ""
-        if len(pages) > MAX_IMAGE_PAGES:
-            note = f"Only the first {MAX_IMAGE_PAGES} pages were read."
-
+        note = f"Read all {len(pages)} page(s) as images." if pages else ""
         return Document(kind="pdf-scan", text=text, images=images, note=note)
 
 
@@ -120,14 +120,10 @@ def _read_csv(data: bytes) -> Document:
         dialect = csv.excel
 
     rows = [row for row in csv.reader(io.StringIO(text), dialect) if any(row)]
-    lines = [" | ".join(cell.strip() for cell in row) for row in rows[:MAX_CSV_ROWS]]
+    lines = [" | ".join(cell.strip() for cell in row) for row in rows]
 
-    note = ""
-    if len(rows) > MAX_CSV_ROWS:
-        note = f"Only the first {MAX_CSV_ROWS} rows were read."
-
+    note = f"Read all {len(rows)} row(s) from the CSV."
     return Document(kind="csv", text="\n".join(lines), note=note)
-
 
 
 def read_document(data: bytes, filename: str) -> Document:
